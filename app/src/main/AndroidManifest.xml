@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="jp.dip.gitchaaan.smartphoneclient.app" >
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name="jp.dip.gitchaaan.smartphoneclient.app.MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name="jp.dip.gitchaaan.smartphoneclient.app.ReceiveLocation">
+            <intent-filter android:priority="1">
+                <action android:name="android.intent.action.LOCALE_CHANGED"/>
+            </intent-filter>
+        </receiver>
+
+        <service android:name="jp.dip.gitchaaan.smartphoneclient.app.GpsService" />
+        <service android:name="jp.dip.gitchaaan.smartphoneclient.app.WifiService"/>
+        <service android:name="jp.dip.gitchaaan.smartphoneclient.app.AccService"/>
+    </application>
+
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
+</manifest>
