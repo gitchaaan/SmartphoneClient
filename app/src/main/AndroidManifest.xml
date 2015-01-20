@@ -17,11 +17,13 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="jp.dip.gitchaaan.smartphoneclient.app.ReceiveLocation">
+        <receiver android:name="jp.dip.gitchaaan.smartphoneclient.app.GpsService$ReceiveLocation">
             <intent-filter android:priority="1">
                 <action android:name="android.intent.action.LOCALE_CHANGED"/>
             </intent-filter>
         </receiver>
+
+        <receiver android:name=".MainActivity$AlarmReceiver"/>
 
         <service android:name="jp.dip.gitchaaan.smartphoneclient.app.GpsService" />
         <service android:name="jp.dip.gitchaaan.smartphoneclient.app.WifiService"/>

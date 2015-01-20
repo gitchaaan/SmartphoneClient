@@ -1,5 +1,9 @@
 package jp.dip.gitchaaan.smartphoneclient.app;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -8,6 +12,8 @@ import android.view.MenuItem;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.Toast;
+
+import java.util.Calendar;
 
 import static android.widget.CompoundButton.*;
 
@@ -28,6 +34,20 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
         sw_gps.setOnCheckedChangeListener(this);
         sw_wifi.setOnCheckedChangeListener(this);
         sw_acc.setOnCheckedChangeListener(this);
+
+        /*
+        アラーム設定
+         */
+        Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent sender = PendingIntent.getBroadcast(this, 0, intent, 0);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.add(Calendar.SECOND, 10);
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 10000, sender);
     }
 
     /*
@@ -64,6 +84,16 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
                     stopService(new Intent(MainActivity.this, AccService.class));
                 }
                 break;
+        }
+    }
+
+    /*
+    タイマー処理用インナークラス
+     */
+    public static class AlarmReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Toast.makeText(context, "Alarm通知", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -60,4 +60,5 @@ public class AccService extends Service implements SensorEventListener {
         Log.i("INFO", "AccService is started.");
         return START_STICKY;
     }
+
 }
