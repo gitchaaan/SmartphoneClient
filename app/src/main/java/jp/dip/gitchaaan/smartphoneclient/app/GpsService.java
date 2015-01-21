@@ -8,9 +8,9 @@ import android.content.Intent;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 /**
  * Created by Owner on 2015/01/19.
@@ -18,12 +18,9 @@ import android.widget.Toast;
 public class GpsService extends Service {
     private LocationManager lm;
     private PendingIntent pi;
-
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    private static double longitude = 0;
+    private static double latitude = 0;
+    private final IBinder mBinder = new LocalBinder();
 
     @Override
     public void onCreate() {
@@ -61,17 +58,34 @@ public class GpsService extends Service {
         super.onDestroy();
     }
 
+    /*
+    Bind処理
+     */
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mBinder;
+    }
+
+    public class LocalBinder extends Binder {
+        GpsService getService() {
+            return GpsService.this;
+        }
+    }
+
+    public double getLongitude() { return longitude; }
+    public double getLatitude() { return latitude; }
+
+    /*
+    位置情報を取得するクラス
+     */
     public static class ReceiveLocation extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.hasExtra(LocationManager.KEY_LOCATION_CHANGED)){
                 LocationManager lm = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
                 Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                String message = "Location\n"
-                        + "Longitude：" + location.getLongitude()
-                        + "\n"
-                        + "Latitude：" + location.getLatitude();
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
             }
         }
     }

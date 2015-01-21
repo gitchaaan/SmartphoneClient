@@ -7,9 +7,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.util.List;
 
@@ -18,12 +18,24 @@ import java.util.List;
  * Created by Owner on 2015/01/19.
  */
 public class WifiService extends Service {
-    WifiManager wm;
-    ReceiveWifi receiveWifi;
+    private WifiManager wm;
+    private ReceiveWifi receiveWifi;
+    private static List<ScanResult> list;
+    private final IBinder mBinder = new LocalBinder();
+
+    public class LocalBinder extends Binder {
+        WifiService getService() {
+            return WifiService.this;
+        }
+    }
+
+    public List<ScanResult> getScanResult () {
+        return list;
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return mBinder;
     }
 
     @Override
@@ -52,8 +64,6 @@ public class WifiService extends Service {
         filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
 
         registerReceiver(receiveWifi,  filter);
-
-        //onPauseで解除
     }
 
     @Override
@@ -69,15 +79,7 @@ public class WifiService extends Service {
             String action = intent.getAction();
             if(action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)){
                 WifiManager wm = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
-                List<ScanResult> list = wm.getScanResults();
-
-                String message = "Wi-Fi State\n";
-
-                for(ScanResult sc:list) {
-                    message += "BSSID：" + sc.BSSID + "\n";
-                }
-
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                list = wm.getScanResults();
             }
         }
     }

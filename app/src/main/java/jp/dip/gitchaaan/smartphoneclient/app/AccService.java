@@ -6,9 +6,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 /**
  * Created by Owner on 2015/01/19.
@@ -17,11 +17,25 @@ public class AccService extends Service implements SensorEventListener {
     private SensorManager sensorManager;
     private final int SENSOR_NAME = Sensor.TYPE_ACCELEROMETER;
     private final int SENSOR_DELAY = SensorManager.SENSOR_DELAY_NORMAL;
+    private final IBinder mBinder = new LocalBinder();
+
+    private float x=0, y=0, z=0;
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return mBinder;
     }
+
+    public class LocalBinder extends Binder {
+        AccService getService() {
+            return AccService.this;
+        }
+    }
+
+    public float getX() { return x; }
+    public float getY() { return y; }
+    public float getZ() { return z; }
+
 
     @Override
     public void onCreate() {
@@ -35,11 +49,9 @@ public class AccService extends Service implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            String result = "Accelerometer\n" +
-                    "X: " + String.valueOf(event.values[0]) +
-                    "\nY: " + String.valueOf(event.values[1]) +
-                    "\nZ: " + String.valueOf(event.values[2]);
-            Toast.makeText(this, result, Toast.LENGTH_SHORT).show();
+            x = event.values[0];
+            y = event.values[1];
+            z = event.values[2];
         }
     }
 
