@@ -9,13 +9,20 @@ import android.net.wifi.ScanResult;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.Toast;
+import android.os.Environment;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -31,6 +38,9 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
     private static WifiService mWifiService;
     private static final int DB_VERSION = 1;
     private static SQLiteDatabase mydb;
+    private AlarmManager alarmManager;
+    private PendingIntent sender;
+    private Calendar calendar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,14 +50,24 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
         Switch sw_gps = (Switch) findViewById(R.id.switch_gps);
         Switch sw_wifi = (Switch) findViewById(R.id.switch_wifi);
         Switch sw_acc = (Switch) findViewById(R.id.switch_acc);
+        Switch sw_rec = (Switch) findViewById(R.id.switch_rec);
 
         sw_gps.setOnCheckedChangeListener(this);
         sw_wifi.setOnCheckedChangeListener(this);
         sw_acc.setOnCheckedChangeListener(this);
+        sw_rec.setOnCheckedChangeListener(this);
 
         sw_gps.setEnabled(false);
         sw_wifi.setEnabled(false);
         sw_acc.setEnabled(false);
+
+        Button btn = (Button) findViewById(R.id.btn_export);
+        btn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                exportDB();
+            }
+        });
 
         /*
         Bindインテント
@@ -72,14 +92,40 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
          */
         Intent intent = new Intent(getApplicationContext(), AlarmReceiver.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent sender = PendingIntent.getBroadcast(this, 0, intent, 0);
+        sender = PendingIntent.getBroadcast(this, 0, intent, 0);
 
-        Calendar calendar = Calendar.getInstance();
+        calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
         calendar.add(Calendar.SECOND, 10);
 
-        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 10000, sender);
+        alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+
+    }
+
+    /*
+    DBエクスポート
+     */
+    private void exportDB() {
+        File sd = Environment.getExternalStorageDirectory();
+        File data = Environment.getDataDirectory();
+        FileChannel source = null;
+        FileChannel destination = null;
+        String currentDBPath = "/data/" +
+                "jp.dip.gitchaaan.smartphoneclient" +
+                "/databases/" + "activity.db";
+        String backupDBPath = "activity.db";
+        File currentDB = new File(data, currentDBPath);
+        File backupDB = new File(sd, backupDBPath);
+
+        try {
+            source = new FileInputStream(currentDB).getChannel();
+            destination = new FileOutputStream(backupDB).getChannel();
+            destination.transferFrom(source, 0, source.size());
+            source.close();
+            Toast.makeText(this, "DB Exported", Toast.LENGTH_SHORT).show();
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /*
@@ -127,31 +173,32 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         switch(buttonView.getId()) {
+            case R.id.switch_rec:
+                if(isChecked) {
+                    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 10000, sender);
+                } else {
+                    alarmManager.cancel(sender);
+                }
+                break;
             case R.id.switch_gps:
                 if(isChecked) {
-                    Toast.makeText(this, "gps on", Toast.LENGTH_SHORT).show();
                     //startService(new Intent(MainActivity.this, GpsService.class));
                 } else {
-                    Toast.makeText(this, "gps off", Toast.LENGTH_SHORT).show();
                     //startService(new Intent(MainActivity.this, GpsService.class));
                 }
                 break;
             case R.id.switch_wifi:
                 if(isChecked) {
-                    Toast.makeText(this, "wifi on", Toast.LENGTH_SHORT).show();
                     //startService(new Intent(MainActivity.this, WifiService.class));
                 }
                 else {
-                    Toast.makeText(this, "wifi off", Toast.LENGTH_SHORT).show();
                     //stopService(new Intent(MainActivity.this, WifiService.class));
                 }
                 break;
             case R.id.switch_acc:
                 if(isChecked) {
-                    Toast.makeText(this, "acc on", Toast.LENGTH_SHORT).show();
                     //startService(new Intent(MainActivity.this, AccService.class));
                 } else {
-                    Toast.makeText(this, "acc off", Toast.LENGTH_SHORT).show();
                     //stopService(new Intent(MainActivity.this, AccService.class));
                 }
                 break;
@@ -167,20 +214,30 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
             Toast.makeText(context, "Alarm通知", Toast.LENGTH_SHORT).show();
 
             Date date = new Date();
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("#yyy/MM/dd_HH:mm.ss_SSS");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("#yyyy/MM/dd_HH:mm.ss_SSS");
             String time = simpleDateFormat.format(date);
 
+            ContentValues values;
             List<ScanResult> list = mWifiService.getScanResult();
             for(ScanResult sc:list) {
-                ContentValues values = new ContentValues();
+                values = new ContentValues();
                 values.put("bssid", sc.BSSID);
                 values.put("time", time);
-                if((mydb.insert("wifi_list", null, values)) != -1) {
-                    Log.i("MainActivity", "Insert成功");
-                } else {
-                    Log.i("MainActivity", "Insert失敗");
-                }
+                mydb.insert("wifi_list", null, values);
             }
+
+            values = new ContentValues();
+            values.put("longitude", mGpsService.getLongitude());
+            values.put("latitude", mGpsService.getLatitude());
+            values.put("time", time);
+            mydb.insert("gps_list", null, values);
+
+            values = new ContentValues();
+            values.put("x_axis", mAccService.getX());
+            values.put("y_axis", mAccService.getY());
+            values.put("z_axis", mAccService.getZ());
+            values.put("time", time);
+            mydb.insert("acc_list", null, values);
         }
     }
 
@@ -236,6 +293,16 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
     @Override
     public void onDestroy() {
         super.onDestroy();
+
+        alarmManager.cancel(sender);
+
+        unbindService(mAccServiceConnection);
+        unbindService(mGpsServiceConnection);
+        unbindService(mWifiServiceConnection);
+
+        stopService(new Intent(MainActivity.this, WifiService.class));
+        stopService(new Intent(MainActivity.this, GpsService.class));
+        stopService(new Intent(MainActivity.this, AccService.class));
     }
 
     /**
