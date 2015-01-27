@@ -111,7 +111,7 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
         FileChannel source = null;
         FileChannel destination = null;
         String currentDBPath = "/data/" +
-                "jp.dip.gitchaaan.smartphoneclient" +
+                this.getBaseContext().getPackageName() +
                 "/databases/" + "activity.db";
         String backupDBPath = "activity.db";
         File currentDB = new File(data, currentDBPath);
@@ -219,25 +219,32 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
 
             ContentValues values;
             List<ScanResult> list = mWifiService.getScanResult();
-            for(ScanResult sc:list) {
+
+            try {
+                mydb.beginTransaction();
+                for (ScanResult sc : list) {
+                    values = new ContentValues();
+                    values.put("bssid", sc.BSSID);
+                    values.put("time", time);
+                    mydb.insert("wifi_list", null, values);
+                }
+
                 values = new ContentValues();
-                values.put("bssid", sc.BSSID);
+                values.put("longitude", mGpsService.getLongitude());
+                values.put("latitude", mGpsService.getLatitude());
                 values.put("time", time);
-                mydb.insert("wifi_list", null, values);
+                mydb.insert("gps_list", null, values);
+
+                values = new ContentValues();
+                values.put("x_axis", mAccService.getX());
+                values.put("y_axis", mAccService.getY());
+                values.put("z_axis", mAccService.getZ());
+                values.put("time", time);
+                mydb.insert("acc_list", null, values);
+                mydb.setTransactionSuccessful();
+            } finally {
+                mydb.endTransaction();
             }
-
-            values = new ContentValues();
-            values.put("longitude", mGpsService.getLongitude());
-            values.put("latitude", mGpsService.getLatitude());
-            values.put("time", time);
-            mydb.insert("gps_list", null, values);
-
-            values = new ContentValues();
-            values.put("x_axis", mAccService.getX());
-            values.put("y_axis", mAccService.getY());
-            values.put("z_axis", mAccService.getZ());
-            values.put("time", time);
-            mydb.insert("acc_list", null, values);
         }
     }
 
