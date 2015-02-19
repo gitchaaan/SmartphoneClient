@@ -9,6 +9,7 @@ import android.net.wifi.ScanResult;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,6 +18,9 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.Toast;
 import android.os.Environment;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.ActivityRecognition;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,21 +35,34 @@ import java.util.List;
 import static android.widget.CompoundButton.*;
 
 
-public class MainActivity extends ActionBarActivity implements OnCheckedChangeListener {
+public class MainActivity extends ActionBarActivity implements OnCheckedChangeListener,
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static AccService mAccService;
     private static GpsService mGpsService;
     private static WifiService mWifiService;
+    private static ActRecService mActRecService;
     private static final int DB_VERSION = 1;
     private static SQLiteDatabase mydb;
     private AlarmManager alarmManager;
     private PendingIntent sender;
     private Calendar calendar;
+    private final String TAG = "MainActivity";
+    GoogleApiClient mGoogleApiClient;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Google API接続（行動認識）
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(ActivityRecognition.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+        mGoogleApiClient.connect();
 
         Switch sw_gps = (Switch) findViewById(R.id.switch_gps);
         Switch sw_wifi = (Switch) findViewById(R.id.switch_wifi);
@@ -80,6 +97,9 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
 
         Intent wifiIntent = new Intent(getApplicationContext(), WifiService.class);
         bindService(wifiIntent, mWifiServiceConnection, Context.BIND_AUTO_CREATE);
+
+        Intent actRecIntent = new Intent(getApplicationContext(), ActRecService.class);
+        bindService(actRecIntent, mActRecServiceConnection, Context.BIND_AUTO_CREATE);
 
         /*
         DB設定
@@ -167,6 +187,18 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
         }
     };
 
+    private ServiceConnection mActRecServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            ActRecService.LocalBinder binder = (ActRecService.LocalBinder) service;
+            mActRecService = binder.getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+        }
+    };
+
     /*
     トグルスイッチ設定
      */
@@ -206,6 +238,26 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
     }
 
     /*
+    行動認識用GoogleAPI接続メソッド
+     */
+    @Override
+    public void onConnected(Bundle bundle) {
+        Intent intent = new Intent(this, ActRecService.class);
+        PendingIntent mActivityRecognitionPendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Log.i(TAG, "onConnected");
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(mGoogleApiClient, 0, mActivityRecognitionPendingIntent);
+    }
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.i(TAG, "onConnectionSuspended");
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.i(TAG, "onConnectionFailed");
+    }
+
+    /*
     タイマー処理用インナークラス
      */
     public static class AlarmReceiver extends BroadcastReceiver {
@@ -219,6 +271,8 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
 
             ContentValues values;
             List<ScanResult> list = mWifiService.getScanResult();
+
+            Log.i("MainActivity", mActRecService.getMostProbActName());
 
             try {
                 mydb.beginTransaction();
@@ -242,6 +296,12 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
                 values.put("time", time);
                 mydb.insert("acc_list", null, values);
                 mydb.setTransactionSuccessful();
+
+                values = new ContentValues();
+                values.put("activity", mActRecService.getMostProbActName());
+                values.put("confidence", mActRecService.getConfidence());
+                values.put("time", time);
+                mydb.insert("activity_list", null, values);
             } finally {
                 mydb.endTransaction();
             }
@@ -272,12 +332,18 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
                     "y_axis real," +
                     "z_axis real," +
                     "time text);");
+            db.execSQL("create table activity_list " +
+                    "(_id integer primary key autoincrement," +
+                    "activity text," +
+                    "confidence real," +
+                    "time text);");
         }
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             db.execSQL("drop table gps_list;");
             db.execSQL("drop table wifi_list;");
             db.execSQL("drop table acc_list;");
+            db.execSQL("drop table activity_list;");
             onCreate(db);
         }
     }
@@ -306,10 +372,12 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
         unbindService(mAccServiceConnection);
         unbindService(mGpsServiceConnection);
         unbindService(mWifiServiceConnection);
+        unbindService(mActRecServiceConnection);
 
         stopService(new Intent(MainActivity.this, WifiService.class));
         stopService(new Intent(MainActivity.this, GpsService.class));
         stopService(new Intent(MainActivity.this, AccService.class));
+        stopService(new Intent(MainActivity.this, ActRecService.class));
     }
 
     /**
