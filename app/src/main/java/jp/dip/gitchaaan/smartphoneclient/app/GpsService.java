@@ -20,6 +20,8 @@ public class GpsService extends Service {
     private PendingIntent pi;
     private static double longitude = 0;
     private static double latitude = 0;
+    private static float speed;
+    private static float accuracy = 0;
     private final IBinder mBinder = new LocalBinder();
 
     @Override
@@ -74,11 +76,14 @@ public class GpsService extends Service {
 
     public double getLongitude() { return longitude; }
     public double getLatitude() { return latitude; }
+    public float getSpeed() { return speed; }
+    public float getAccuracy() { return accuracy; }
 
     /*
     位置情報を取得するクラス
      */
     public static class ReceiveLocation extends BroadcastReceiver {
+
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.hasExtra(LocationManager.KEY_LOCATION_CHANGED)){
@@ -86,6 +91,8 @@ public class GpsService extends Service {
                 Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
+                speed = location.getSpeed();
+                accuracy = location.getAccuracy();
             }
         }
     }

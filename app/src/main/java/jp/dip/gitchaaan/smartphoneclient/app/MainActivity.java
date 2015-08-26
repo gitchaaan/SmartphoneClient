@@ -278,7 +278,9 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
                 mydb.beginTransaction();
                 for (ScanResult sc : list) {
                     values = new ContentValues();
+                    values.put("ssid", sc.SSID);
                     values.put("bssid", sc.BSSID);
+                    values.put("level", sc.level);
                     values.put("time", time);
                     mydb.insert("wifi_list", null, values);
                 }
@@ -286,6 +288,8 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
                 values = new ContentValues();
                 values.put("longitude", mGpsService.getLongitude());
                 values.put("latitude", mGpsService.getLatitude());
+                values.put("speed", mGpsService.getSpeed());
+                values.put("accuracy", mGpsService.getAccuracy());
                 values.put("time", time);
                 mydb.insert("gps_list", null, values);
 
@@ -321,10 +325,14 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
                     "(_id integer primary key autoincrement," +
                     "longitude real," +
                     "latitude real," +
+                    "speed real," +
+                    "accuracy real," +
                     "time text);");
             db.execSQL("create table wifi_list " +
                     "(_id integer primary key autoincrement," +
-                    "bssid text, " +
+                    "ssid text," +
+                    "bssid text," +
+                    "level integer," +
                     "time text);");
             db.execSQL("create table acc_list " +
                     "(_id integer primary key autoincrement," +
