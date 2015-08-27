@@ -78,11 +78,18 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
         sw_wifi.setEnabled(false);
         sw_acc.setEnabled(false);
 
-        Button btn = (Button) findViewById(R.id.btn_export);
-        btn.setOnClickListener(new OnClickListener() {
+        Button btn_exp = (Button) findViewById(R.id.btn_export);
+        Button btn_map = (Button) findViewById(R.id.btn_map);
+        btn_exp.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 exportDB();
+            }
+        });
+        btn_map.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("MainActivity", "clicked");
             }
         });
 

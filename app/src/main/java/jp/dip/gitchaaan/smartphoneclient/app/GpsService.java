@@ -86,13 +86,15 @@ public class GpsService extends Service {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.hasExtra(LocationManager.KEY_LOCATION_CHANGED)){
-                LocationManager lm = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+            if(intent.hasExtra(LocationManager.KEY_LOCATION_CHANGED)) {
+                LocationManager lm = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
                 Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                latitude = location.getLatitude();
-                longitude = location.getLongitude();
-                speed = location.getSpeed();
-                accuracy = location.getAccuracy();
+                if (location != null) {
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+                    speed = location.getSpeed();
+                    accuracy = location.getAccuracy();
+                }
             }
         }
     }

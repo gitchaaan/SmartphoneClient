@@ -47,7 +47,21 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="DB Export"
-            android:id="@+id/btn_export" android:layout_below="@+id/switch_acc" android:layout_centerHorizontal="true"
-            android:layout_marginTop="30dp"/>
+            android:id="@+id/btn_export"
+            android:layout_below="@+id/switch_acc" android:layout_toRightOf="@+id/btn_map"
+            android:layout_toEndOf="@+id/btn_map"/>
+    <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MapView"
+            android:id="@+id/btn_map"
+            android:layout_below="@+id/switch_acc" android:layout_alignLeft="@+id/switch_acc"
+            android:layout_alignStart="@+id/switch_acc"/>
+    <fragment android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:name="com.google.android.gms.maps.MapFragment" android:id="@+id/fragment"
+              android:layout_below="@+id/btn_map" android:layout_alignParentLeft="true"
+              android:layout_alignParentStart="true" android:layout_alignParentBottom="true"
+              android:layout_alignParentRight="true" android:layout_alignParentEnd="true"/>
 
 </RelativeLayout>
