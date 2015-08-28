@@ -2,25 +2,29 @@ package jp.dip.gitchaaan.smartphoneclient.app;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.app.TabActivity;
 import android.content.*;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.wifi.ScanResult;
-import android.os.IBinder;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.Switch;
-import android.widget.Toast;
-import android.os.Environment;
+import android.widget.*;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,10 +36,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import static android.widget.CompoundButton.*;
+import static android.widget.CompoundButton.OnCheckedChangeListener;
+import static android.widget.CompoundButton.OnClickListener;
 
 
-public class MainActivity extends ActionBarActivity implements OnCheckedChangeListener,
+public class MainActivity extends TabActivity implements OnCheckedChangeListener,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static AccService mAccService;
@@ -48,13 +53,40 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
     private PendingIntent sender;
     private Calendar calendar;
     private final String TAG = "MainActivity";
+    private GoogleMap map;
     GoogleApiClient mGoogleApiClient;
-
+    private static final LatLng KYOTO_STA = new LatLng(34.985397, 135.757741);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //map設定
+        map = ((MapFragment) getFragmentManager().findFragmentById(R.id.fragment)).getMap();
+        if(map != null) {
+            MarkerOptions markerOpt1 = new MarkerOptions();
+            markerOpt1.position(KYOTO_STA);
+            Marker marker1 = map.addMarker(markerOpt1);
+
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(KYOTO_STA, 15));
+
+
+        }
+
+        //Tab設定
+        TabHost tabHost = getTabHost();
+        TabHost.TabSpec tab1 = tabHost.newTabSpec("tab1");
+        tab1.setIndicator("Control");
+        tab1.setContent(R.id.tab1);
+        tabHost.addTab(tab1);
+
+        TabHost.TabSpec tab2 = tabHost.newTabSpec("tab2");
+        tab2.setIndicator("Map");
+        tab2.setContent(R.id.tab2);
+        tabHost.addTab(tab2);
+
+        tabHost.setCurrentTabByTag("tab2");
 
         //Google API接続（行動認識）
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -79,17 +111,17 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
         sw_acc.setEnabled(false);
 
         Button btn_exp = (Button) findViewById(R.id.btn_export);
-        Button btn_map = (Button) findViewById(R.id.btn_map);
         btn_exp.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 exportDB();
             }
         });
+        Button btn_map = (Button) findViewById(R.id.btn_map);
         btn_map.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("MainActivity", "clicked");
+                Cursor cursor = mydb.query("gps_list", new String[] {"time"}, null, null, null, null, null);
             }
         });
 
@@ -362,8 +394,6 @@ public class MainActivity extends ActionBarActivity implements OnCheckedChangeLi
             onCreate(db);
         }
     }
-
-
 
     /**
      * ここから中断時の設定

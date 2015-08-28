@@ -1,67 +1,90 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingLeft="@dimen/activity_horizontal_margin"
-                android:paddingRight="@dimen/activity_horizontal_margin"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:paddingBottom="@dimen/activity_vertical_margin"
-                tools:context=".MainActivity">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:paddingLeft="@dimen/activity_horizontal_margin"
+              android:paddingRight="@dimen/activity_horizontal_margin"
+              android:paddingTop="@dimen/activity_vertical_margin"
+              android:paddingBottom="@dimen/activity_vertical_margin"
+              tools:context=".MainActivity">
 
-    <Switch
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Recording"
-            android:textOn="start"
-            android:textOff="stop"
-            android:id="@+id/switch_rec"
-            android:checked="false"
-            android:layout_alignParentTop="true" android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"/>
-    <Switch
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="GPS"
-            android:id="@+id/switch_gps"
-            android:checked="false"
-            android:layout_alignRight="@+id/switch_acc" android:layout_alignEnd="@+id/switch_acc"
-            android:layout_alignLeft="@+id/switch_acc" android:layout_alignStart="@+id/switch_acc"
-            android:layout_marginTop="50dp"/>
-    <Switch
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Wi-Fi"
-            android:id="@+id/switch_wifi"
-            android:checked="false"
-            android:layout_alignRight="@+id/switch_acc"
-            android:layout_alignEnd="@+id/switch_acc" android:layout_below="@+id/switch_gps"
-            android:layout_alignLeft="@+id/switch_acc" android:layout_alignStart="@+id/switch_acc"/>
-    <Switch
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Acceleration"
-            android:id="@+id/switch_acc"
-            android:checked="false"
-            android:layout_below="@+id/switch_wifi" android:layout_centerHorizontal="true"/>
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DB Export"
-            android:id="@+id/btn_export"
-            android:layout_below="@+id/switch_acc" android:layout_toRightOf="@+id/btn_map"
-            android:layout_toEndOf="@+id/btn_map"/>
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="MapView"
-            android:id="@+id/btn_map"
-            android:layout_below="@+id/switch_acc" android:layout_alignLeft="@+id/switch_acc"
-            android:layout_alignStart="@+id/switch_acc"/>
-    <fragment android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:name="com.google.android.gms.maps.MapFragment" android:id="@+id/fragment"
-              android:layout_below="@+id/btn_map" android:layout_alignParentLeft="true"
-              android:layout_alignParentStart="true" android:layout_alignParentBottom="true"
-              android:layout_alignParentRight="true" android:layout_alignParentEnd="true"/>
+    <TabHost xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@android:id/tabhost">
 
-</RelativeLayout>
+        <TabWidget
+            android:id="@android:id/tabs"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"/>
+        <FrameLayout
+            android:id="@android:id/tabcontent"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent">
+
+            <RelativeLayout
+                    android:id="@+id/tab1"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:orientation="vertical">
+                <Switch
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Recording"
+                    android:textOn="start"
+                    android:textOff="stop"
+                    android:id="@+id/switch_rec"
+                    android:checked="false"
+                    android:layout_marginTop="63dp" android:layout_alignParentTop="true"
+                    android:layout_alignParentLeft="true" android:layout_alignParentStart="true"/>
+                <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DB Export"
+                        android:id="@+id/btn_export"
+                        android:layout_below="@+id/switch_acc" android:layout_centerHorizontal="true"/>
+                <Switch
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="GPS"
+                        android:id="@+id/switch_gps"
+                        android:checked="false"
+                        android:layout_below="@+id/switch_rec" android:layout_alignRight="@+id/switch_acc"
+                        android:layout_alignEnd="@+id/switch_acc"/>
+                <Switch
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Wi-Fi"
+                        android:id="@+id/switch_wifi"
+                        android:checked="false"
+                        android:layout_below="@+id/switch_gps" android:layout_alignRight="@+id/switch_gps"
+                        android:layout_alignEnd="@+id/switch_gps"/>
+                <Switch
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Acceleration"
+                        android:id="@+id/switch_acc"
+                        android:checked="false"
+                        android:layout_below="@+id/switch_wifi" android:layout_centerHorizontal="true"/>
+                <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Map View"
+                        android:id="@+id/btn_map"
+                        android:layout_below="@+id/btn_export" android:layout_centerHorizontal="true"/>
+            </RelativeLayout>
+
+            <RelativeLayout
+                            android:id="@+id/tab2"
+                            android:layout_width="fill_parent"
+                            android:layout_height="fill_parent"
+                            android:orientation="vertical">
+                <fragment android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:layout_marginTop="63dp"
+                          android:name="com.google.android.gms.maps.MapFragment" android:id="@+id/fragment"/>
+            </RelativeLayout>
+        </FrameLayout>
+    </TabHost>
+</LinearLayout>

@@ -27,7 +27,6 @@
                 <action android:name="android.intent.action.LOCALE_CHANGED"/>
             </intent-filter>
         </receiver>
-
         <receiver android:name=".MainActivity$AlarmReceiver"/>
 
         <service android:name="jp.dip.gitchaaan.smartphoneclient.app.GpsService" />
