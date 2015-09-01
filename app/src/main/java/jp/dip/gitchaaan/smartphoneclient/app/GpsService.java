@@ -32,17 +32,17 @@ public class GpsService extends Service {
 
         lm = (LocationManager)getSystemService(LOCATION_SERVICE);
         Criteria criteria = new Criteria();
-        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-        criteria.setPowerRequirement(Criteria.POWER_LOW);
-        criteria.setSpeedRequired(false);
+        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+        criteria.setPowerRequirement(Criteria.POWER_HIGH);
+        criteria.setSpeedRequired(true);
         criteria.setAltitudeRequired(false);
         criteria.setBearingRequired(false);
-        criteria.setCostAllowed(false);
+        criteria.setCostAllowed(true);
 
         Intent nextIntent = new Intent(this, ReceiveLocation.class);
         pi = PendingIntent.getBroadcast(this, 0, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        lm.requestLocationUpdates(1000, 1, criteria, pi);
+        lm.requestLocationUpdates(0, 0, criteria, pi);
     }
 
     @Override
@@ -58,6 +58,7 @@ public class GpsService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        lm.removeUpdates(pi);
     }
 
     /*

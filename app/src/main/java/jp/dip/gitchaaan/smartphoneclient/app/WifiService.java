@@ -51,7 +51,6 @@ public class WifiService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-
         unregisterReceiver(receiveWifi);
     }
 

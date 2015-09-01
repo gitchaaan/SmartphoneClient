@@ -11,6 +11,7 @@ import android.net.wifi.ScanResult;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,6 +23,7 @@ import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -32,12 +34,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 import static android.widget.CompoundButton.OnCheckedChangeListener;
-import static android.widget.CompoundButton.OnClickListener;
 
 
 public class MainActivity extends TabActivity implements OnCheckedChangeListener,
@@ -51,31 +51,30 @@ public class MainActivity extends TabActivity implements OnCheckedChangeListener
     private static SQLiteDatabase mydb;
     private AlarmManager alarmManager;
     private PendingIntent sender;
-    private Calendar calendar;
     private final String TAG = "MainActivity";
     private GoogleMap map;
-    GoogleApiClient mGoogleApiClient;
+    private TabHost tabHost;
+    private GoogleApiClient mGoogleApiClient;
     private static final LatLng KYOTO_STA = new LatLng(34.985397, 135.757741);
+    private NumberPicker numPicker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        numPicker = (NumberPicker) findViewById(R.id.numberPicker);
+        numPicker.setMinValue(10);
+        numPicker.setMaxValue(60);
+
         //map設定
         map = ((MapFragment) getFragmentManager().findFragmentById(R.id.fragment)).getMap();
         if(map != null) {
-            MarkerOptions markerOpt1 = new MarkerOptions();
-            markerOpt1.position(KYOTO_STA);
-            Marker marker1 = map.addMarker(markerOpt1);
-
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(KYOTO_STA, 15));
-
-
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(KYOTO_STA, 10));
         }
 
         //Tab設定
-        TabHost tabHost = getTabHost();
+        tabHost = getTabHost();
         TabHost.TabSpec tab1 = tabHost.newTabSpec("tab1");
         tab1.setIndicator("Control");
         tab1.setContent(R.id.tab1);
@@ -86,7 +85,7 @@ public class MainActivity extends TabActivity implements OnCheckedChangeListener
         tab2.setContent(R.id.tab2);
         tabHost.addTab(tab2);
 
-        tabHost.setCurrentTabByTag("tab2");
+        tabHost.setCurrentTabByTag("tab1");
 
         //Google API接続（行動認識）
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -110,36 +109,6 @@ public class MainActivity extends TabActivity implements OnCheckedChangeListener
         sw_wifi.setEnabled(false);
         sw_acc.setEnabled(false);
 
-        Button btn_exp = (Button) findViewById(R.id.btn_export);
-        btn_exp.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                exportDB();
-            }
-        });
-        Button btn_map = (Button) findViewById(R.id.btn_map);
-        btn_map.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Cursor cursor = mydb.query("gps_list", new String[] {"time"}, null, null, null, null, null);
-            }
-        });
-
-        /*
-        Bindインテント
-         */
-        Intent accIntent = new Intent(getApplicationContext(), AccService.class);
-        bindService(accIntent, mAccServiceConnection, Context.BIND_AUTO_CREATE);
-
-        Intent gpsIntent = new Intent(getApplicationContext(), GpsService.class);
-        bindService(gpsIntent, mGpsServiceConnection, Context.BIND_AUTO_CREATE);
-
-        Intent wifiIntent = new Intent(getApplicationContext(), WifiService.class);
-        bindService(wifiIntent, mWifiServiceConnection, Context.BIND_AUTO_CREATE);
-
-        Intent actRecIntent = new Intent(getApplicationContext(), ActRecService.class);
-        bindService(actRecIntent, mActRecServiceConnection, Context.BIND_AUTO_CREATE);
-
         /*
         DB設定
          */
@@ -153,12 +122,60 @@ public class MainActivity extends TabActivity implements OnCheckedChangeListener
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         sender = PendingIntent.getBroadcast(this, 0, intent, 0);
 
-        calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.add(Calendar.SECOND, 10);
-
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
+        /*
+        ボタン処理
+         */
+        Button btn_exp = (Button) findViewById(R.id.btn_export);
+        btn_exp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                exportDB();
+            }
+        });
+        Button btn_map = (Button) findViewById(R.id.btn_map);
+        btn_map.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tabHost.setCurrentTabByTag("tab2");
+                map.clear();
+                Cursor cursor = mydb.query("gps_list, activity_list", new String[] {"latitude", "longitude", "activity", "activity_list.time"}, "activity_list.time = gps_list.time", null, null, null, null);
+                while(cursor.moveToNext()) {
+                    LatLng latLng = new LatLng(cursor.getDouble(0), cursor.getDouble(1));
+                    float mColor = BitmapDescriptorFactory.HUE_GREEN;
+                    switch(cursor.getString(2)) {
+                        case "IN_VEHICLE":
+                            mColor = BitmapDescriptorFactory.HUE_RED;
+                            break;
+                        case "ON_BICYCLE":
+                            mColor = BitmapDescriptorFactory.HUE_ORANGE;
+                            break;
+                        case "ON_FOOT":
+                            mColor = BitmapDescriptorFactory.HUE_YELLOW;
+                            break;
+                        case "STILL":
+                            mColor = BitmapDescriptorFactory.HUE_GREEN;
+                            break;
+                        case "UNKNOWN":
+                            mColor = BitmapDescriptorFactory.HUE_VIOLET;
+                            break;
+                        case "TILTING":
+                            mColor = BitmapDescriptorFactory.HUE_VIOLET;
+                            break;
+                        case "UNDETECTED":
+                            mColor = BitmapDescriptorFactory.HUE_VIOLET;
+                            break;
+                    }
+                    MarkerOptions markerOpt = new MarkerOptions();
+                    markerOpt.icon(BitmapDescriptorFactory.defaultMarker(mColor));
+                    markerOpt.position(latLng);
+                    markerOpt.title(cursor.getString(2));
+                    markerOpt.snippet(cursor.getString(3));
+                    Marker marker = map.addMarker(markerOpt);
+                }
+            }
+        });
     }
 
     /*
@@ -246,9 +263,34 @@ public class MainActivity extends TabActivity implements OnCheckedChangeListener
         switch(buttonView.getId()) {
             case R.id.switch_rec:
                 if(isChecked) {
-                    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 10000, sender);
+                    /*
+                    Bindインテント
+                    */
+                    Intent accIntent = new Intent(getApplicationContext(), AccService.class);
+                    bindService(accIntent, mAccServiceConnection, Context.BIND_AUTO_CREATE);
+
+                    Intent gpsIntent = new Intent(getApplicationContext(), GpsService.class);
+                    bindService(gpsIntent, mGpsServiceConnection, Context.BIND_AUTO_CREATE);
+
+                    Intent wifiIntent = new Intent(getApplicationContext(), WifiService.class);
+                    bindService(wifiIntent, mWifiServiceConnection, Context.BIND_AUTO_CREATE);
+
+                    Intent actRecIntent = new Intent(getApplicationContext(), ActRecService.class);
+                    bindService(actRecIntent, mActRecServiceConnection, Context.BIND_AUTO_CREATE);
+
+                    /*
+                    アラームインターバル設定
+                     */
+                    long firstTime = SystemClock.elapsedRealtime();
+                    long interval = 10 * 1000;
+                    firstTime += interval;
+                    alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, interval, sender);
                 } else {
                     alarmManager.cancel(sender);
+                    unbindService(mAccServiceConnection);
+                    unbindService(mGpsServiceConnection);
+                    unbindService(mWifiServiceConnection);
+                    unbindService(mActRecServiceConnection);
                 }
                 break;
             case R.id.switch_gps:
@@ -413,19 +455,13 @@ public class MainActivity extends TabActivity implements OnCheckedChangeListener
         super.onDestroy();
 
         alarmManager.cancel(sender);
-
         unbindService(mAccServiceConnection);
         unbindService(mGpsServiceConnection);
         unbindService(mWifiServiceConnection);
         unbindService(mActRecServiceConnection);
-
-        stopService(new Intent(MainActivity.this, WifiService.class));
-        stopService(new Intent(MainActivity.this, GpsService.class));
-        stopService(new Intent(MainActivity.this, AccService.class));
-        stopService(new Intent(MainActivity.this, ActRecService.class));
     }
 
-    /**
+     /**
      * ここからオプションメニュー設定(自動生成)
      */
     @Override
