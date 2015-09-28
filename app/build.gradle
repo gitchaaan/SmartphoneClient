@@ -14,12 +14,12 @@ repositories {
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.1.1"
+    buildToolsVersion '21.1.1'
 
     defaultConfig {
         applicationId "jp.dip.gitchaaan.smartphoneclient.app"
         minSdkVersion 14
-        targetSdkVersion 21
+        targetSdkVersion 17
         versionCode 1
         versionName "1.0"
     }

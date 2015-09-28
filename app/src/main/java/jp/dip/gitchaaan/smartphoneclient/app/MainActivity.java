@@ -282,15 +282,17 @@ public class MainActivity extends TabActivity implements OnCheckedChangeListener
                     アラームインターバル設定
                      */
                     long firstTime = SystemClock.elapsedRealtime();
-                    long interval = 10 * 1000;
+                    long interval = numPicker.getValue() * 1000;
                     firstTime += interval;
                     alarmManager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, interval, sender);
+                    numPicker.setEnabled(false);
                 } else {
                     alarmManager.cancel(sender);
                     unbindService(mAccServiceConnection);
                     unbindService(mGpsServiceConnection);
                     unbindService(mWifiServiceConnection);
                     unbindService(mActRecServiceConnection);
+                    numPicker.setEnabled(true);
                 }
                 break;
             case R.id.switch_gps:
